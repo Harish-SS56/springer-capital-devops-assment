@@ -1,8 +1,5 @@
 # DevOps Intern Final Assessment
 
-**Name:** [Your Name Here]  
-**Date:** December 3, 2025  
-**Email:** [Your Email Here]
 
 ## Project Description
 
@@ -206,8 +203,8 @@ curl -G -s "http://localhost:3100/loki/api/v1/query" --data-urlencode 'query={jo
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/[YOUR-USERNAME]/[YOUR-REPO].git
-cd [YOUR-REPO]
+git clone https://github.com/Harish-SS56/springer-capital-devops-assment.git
+cd 
 ```
 
 ### Run Locally
