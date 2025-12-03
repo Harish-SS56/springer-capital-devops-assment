@@ -1,0 +1,209 @@
+================================================================================
+GRAFANA LOKI MONITORING SETUP
+DevOps Intern Final Assessment
+================================================================================
+
+OVERVIEW
+--------
+Loki is a log aggregation system designed to store and query logs from all 
+applications and infrastructure. This setup captures logs from our Docker 
+containers and Nomad jobs.
+
+================================================================================
+INSTALLATION & SETUP
+================================================================================
+
+METHOD 1: Docker (Recommended for Testing)
+-------------------------------------------
+
+1. Run Loki container:
+   
+   docker run -d --name=loki -p 3100:3100 grafana/loki:latest
+
+2. Verify Loki is running:
+   
+   curl http://localhost:3100/ready
+
+   Expected output: "ready"
+
+
+METHOD 2: Docker Compose (Full Stack)
+--------------------------------------
+
+Create a docker-compose.yml file:
+
+---
+version: "3"
+
+services:
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-data:/loki
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+---
+
+Start the stack:
+   docker-compose up -d
+
+================================================================================
+VIEWING LOGS
+================================================================================
+
+METHOD 1: LogCLI (Command Line)
+--------------------------------
+
+1. Install LogCLI:
+   
+   # On Linux/Mac
+   wget https://github.com/grafana/loki/releases/download/v2.9.0/logcli-linux-amd64.zip
+   unzip logcli-linux-amd64.zip
+   chmod +x logcli-linux-amd64
+   mv logcli-linux-amd64 /usr/local/bin/logcli
+
+2. Query logs:
+   
+   export LOKI_ADDR=http://localhost:3100
+   logcli query '{job="hello-devops"}'
+
+
+METHOD 2: Direct API Query
+---------------------------
+
+Query recent logs:
+
+curl -G -s "http://localhost:3100/loki/api/v1/query" \
+  --data-urlencode 'query={job="hello-devops"}' \
+  --data-urlencode 'limit=100'
+
+Query logs in a time range:
+
+curl -G -s "http://localhost:3100/loki/api/v1/query_range" \
+  --data-urlencode 'query={job="hello-devops"}' \
+  --data-urlencode 'start=2025-12-03T00:00:00Z' \
+  --data-urlencode 'end=2025-12-03T23:59:59Z'
+
+
+METHOD 3: Grafana UI (Best for Visualization)
+----------------------------------------------
+
+1. Access Grafana at http://localhost:3000
+   Username: admin
+   Password: admin
+
+2. Add Loki as a data source:
+   - Configuration → Data Sources → Add data source
+   - Select "Loki"
+   - URL: http://loki:3100
+   - Click "Save & Test"
+
+3. Explore logs:
+   - Go to Explore (compass icon)
+   - Select Loki data source
+   - Enter query: {job="hello-devops"}
+   - Click "Run Query"
+
+================================================================================
+INTEGRATING WITH DOCKER
+================================================================================
+
+Run container with log labels:
+
+docker run -d \
+  --name hello-devops \
+  --log-driver=json-file \
+  --label="job=hello-devops" \
+  hello-devops:latest
+
+================================================================================
+INTEGRATING WITH NOMAD
+================================================================================
+
+Nomad automatically sends task logs to stdout/stderr, which can be captured:
+
+1. View Nomad allocation logs:
+   
+   nomad alloc logs <allocation-id>
+
+2. Configure Promtail to scrape Nomad logs by adding to promtail-config.yml:
+
+---
+scrape_configs:
+  - job_name: nomad
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nomad
+          __path__: /var/lib/nomad/alloc/*/alloc/logs/*.stdout.*
+---
+
+================================================================================
+USEFUL LOKI QUERIES
+================================================================================
+
+1. All logs from hello-devops:
+   {job="hello-devops"}
+
+2. Filter by log level:
+   {job="hello-devops"} |= "ERROR"
+
+3. Count errors in last hour:
+   count_over_time({job="hello-devops"} |= "ERROR" [1h])
+
+4. Logs from specific container:
+   {container_name="hello-devops"}
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+
+✅ Loki is running and accessible at http://localhost:3100
+✅ Container logs are being collected
+✅ Logs can be queried via API or LogCLI
+✅ Grafana (optional) is connected to Loki
+✅ Documentation is complete in repository
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Issue: Cannot connect to Loki
+Solution: Check if Loki is running: docker ps | grep loki
+
+Issue: No logs appearing
+Solution: Ensure containers are running and producing logs
+         Check Promtail configuration if using log forwarding
+
+Issue: Query returns no results
+Solution: Verify label names match your container/job labels
+         Check time range - logs may be outside query window
+
+================================================================================
+ADDITIONAL RESOURCES
+================================================================================
+
+- Loki Documentation: https://grafana.com/docs/loki/latest/
+- LogQL Query Language: https://grafana.com/docs/loki/latest/logql/
+- Promtail Configuration: https://grafana.com/docs/loki/latest/clients/promtail/
+
+================================================================================
+END OF SETUP DOCUMENTATION
+================================================================================

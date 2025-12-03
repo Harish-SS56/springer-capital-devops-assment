@@ -1,0 +1,49 @@
+name: CI
+
+# Trigger the workflow on push or pull request to main branch
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Checkout repository code
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    # Setup Python environment
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    # Run the Python script
+    - name: Run hello.py
+      run: |
+        python hello.py
+    
+    # Test the bash script (Linux environment)
+    - name: Test sysinfo.sh
+      run: |
+        chmod +x scripts/sysinfo.sh
+        bash scripts/sysinfo.sh
+    
+    # Build Docker image
+    - name: Build Docker image
+      run: |
+        docker build -t hello-devops:latest .
+    
+    # Test Docker container
+    - name: Test Docker container
+      run: |
+        docker run hello-devops:latest
+    
+    # Display success message
+    - name: CI Pipeline Complete
+      run: |
+        echo "✅ All tests passed successfully!"
