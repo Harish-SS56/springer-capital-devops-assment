@@ -243,16 +243,3 @@ docker run hello-devops:latest
 
 This project is created for educational purposes as part of the DevOps Internship Final Assessment.
 
----
-
-## Contact
-
-**Name:** [Your Name]  
-**Primary Email:** [Your Primary Email]  
-**Secondary Email:** [Your Secondary Email]  
-**Internship Period:** [Start Date] - [End Date]  
-**Time Zone:** [Your Time Zone]
-
----
-
-*Last Updated: December 3, 2025*
